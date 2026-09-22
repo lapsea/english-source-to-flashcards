@@ -102,10 +102,16 @@
       transition: width 0.35s cubic-bezier(0.2, 0.7, 0.25, 1);
     }
 
-    .deck { flex: 1; min-height: 0; }
+    .deck {
+      flex: 1 1 0;
+      min-height: 0;
+      display: flex;
+      overflow: hidden;
+    }
     .track {
       display: flex;
-      height: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
       margin: 0;
       padding: 0;
       overflow-x: auto;
@@ -120,6 +126,7 @@
     .slide {
       flex: 0 0 100%;
       min-width: 0;
+      min-height: 0;
       padding: 14px 20px 8px;
       display: flex;
       scroll-snap-align: center;
@@ -128,7 +135,7 @@
     .card {
       position: relative;
       width: 100%;
-      height: clamp(300px, calc(100dvh - 230px), 520px);
+      height: 100%;
       min-height: 0;
       max-height: none;
       margin: auto;
@@ -405,7 +412,6 @@
       .phone { min-height: 0; }
       .source { margin-bottom: 7px; }
       .slide { padding-top: 10px; }
-      .card { height: max(260px, calc(100dvh - 210px)); }
       .face { padding-top: 22px; padding-bottom: 40px; }
       .pos { margin-bottom: 10px; }
       .word { font-size: clamp(31px, 10vw, 46px); }

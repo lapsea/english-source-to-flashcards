@@ -19,6 +19,7 @@ When the user says exactly “演示内容” and does not provide learning mate
 - Keep short source attribution when it is known. Do not embed the full source text or source image in the deliverable.
 - Do not add audio or pronunciation playback. IPA is optional for individual words and may be omitted when uncertain.
 - Keep every card at one consistent, viewport-responsive fixed height. When content is longer than the available space, scroll it inside the card instead of changing the card height.
+- Size the card from the remaining flex space between the header and controls, not from `100vh` or `100dvh`; embedded mobile previews can report a viewport taller than their visible canvas.
 - Marking a card as known or as needing review must update its state without moving to another card.
 - If no output location is specified, save the HTML in the current working directory. Use a concise topic-based filename ending in `-english-flashcards.html`, and do not overwrite an existing file without permission.
 
