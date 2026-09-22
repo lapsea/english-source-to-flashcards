@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>English Flashcards</title>
+  <style>
+    :root {
+      --bg: #f4d940;
+      --surface: #fffdf6;
+      --fg: #302d28;
+      --muted: #706a60;
+      --accent: #e85d75;
+      --purple: #8b6fd6;
+      --green: #58a66c;
+      --sun: #f4d940;
+      --soft: rgba(48, 45, 40, 0.07);
+      --accent-soft: rgba(232, 93, 117, 0.18);
+      --card-shadow: 8px 8px 0 var(--fg);
+      --shadow-sm: 4px 4px 0 var(--fg);
+      --font-display: "Avenir Next", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      min-width: 300px;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      line-height: 1.5;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button { color: inherit; cursor: pointer; font: inherit; }
+    p, h1, h2 { margin: 0; }
+
+    .phone {
+      position: relative;
+      width: 100%;
+      max-width: 430px;
+      height: 100vh;
+      height: 100dvh;
+      min-height: 560px;
+      margin-inline: auto;
+      display: flex;
+      flex-direction: column;
+      padding-top: max(14px, env(safe-area-inset-top));
+      padding-bottom: max(14px, env(safe-area-inset-bottom));
+      overflow: hidden;
+    }
+
+    .app-bar { flex: none; padding: 4px 22px 12px; }
+    .bar-row {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 5px;
+    }
+    .deck-name {
+      min-width: 0;
+      font-size: 16px;
+      font-weight: 850;
+      letter-spacing: -0.01em;
+      line-height: 1.25;
+    }
+    .counter {
+      flex: none;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: #575147;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .source {
+      min-height: 18px;
+      margin-bottom: 11px;
+      overflow: hidden;
+      color: #575147;
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .progress {
+      height: 16px;
+      padding: 3px;
+      border: 2px solid var(--fg);
+      border-radius: 999px;
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+    }
+    .progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: 999px;
+      background: var(--accent);
+      transition: width 0.35s cubic-bezier(0.2, 0.7, 0.25, 1);
+    }
+
+    .deck { flex: 1; min-height: 0; }
+    .track {
+      display: flex;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      list-style: none;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      touch-action: pan-x;
+    }
+    .track::-webkit-scrollbar { display: none; }
+    .slide {
+      flex: 0 0 100%;
+      min-width: 0;
+      padding: 14px 20px 8px;
+      display: flex;
+      scroll-snap-align: center;
+    }
+
+    .card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 300px;
+      max-height: 520px;
+      margin: auto;
+      padding: 0;
+      border: 0;
+      background: none;
+      cursor: pointer;
+      perspective: 1400px;
+      text-align: inherit;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .slide .card {
+      opacity: calc(1 - var(--abs, 0) * 0.42);
+      filter: saturate(calc(1 - var(--abs, 0) * 0.4));
+      transform: perspective(1200px) rotateY(calc(var(--d, 0) * 9deg)) scale(calc(1 - var(--abs, 0) * 0.09));
+      will-change: transform, opacity;
+    }
+    .card-inner {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      transition: transform 0.62s cubic-bezier(0.3, 1.36, 0.44, 1);
+    }
+    .card.flipped .card-inner { transform: rotateY(180deg); }
+    .tone-1 { --chip: var(--accent); }
+    .tone-2 { --chip: var(--purple); }
+    .tone-3 { --chip: var(--green); }
+    .tone-4 { --chip: var(--sun); }
+    .card::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      top: -13px;
+      left: 26px;
+      width: 74px;
+      height: 44px;
+      border: 2.5px solid var(--fg);
+      border-radius: 12px;
+      background: var(--chip, var(--accent));
+    }
+    .face {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 26px 52px;
+      border: 2.5px solid var(--fg);
+      border-radius: 20px;
+      background: var(--surface);
+      box-shadow: var(--card-shadow);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      text-align: center;
+    }
+    .face.back {
+      justify-content: flex-start;
+      padding-top: 26px;
+      overflow-y: auto;
+      transform: rotateY(180deg);
+      scrollbar-width: thin;
+      scrollbar-color: var(--muted) transparent;
+    }
+    .pos {
+      max-width: 90%;
+      margin-bottom: 22px;
+      padding: 5px 12px;
+      overflow: hidden;
+      border: 2px solid var(--fg);
+      border-radius: 10px;
+      background: var(--chip, var(--accent));
+      box-shadow: var(--shadow-sm);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: 0.06em;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .word {
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      font-family: var(--font-display);
+      font-size: clamp(36px, 11vw, 56px);
+      font-weight: 850;
+      letter-spacing: -0.025em;
+      line-height: 1.06;
+    }
+    .word.long { font-size: clamp(28px, 8.8vw, 43px); }
+    .word.very-long { font-size: clamp(24px, 7.3vw, 35px); }
+    .phon {
+      margin-top: 14px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 15px;
+    }
+    .face-hint {
+      position: absolute;
+      right: 0;
+      bottom: 18px;
+      left: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .def {
+      align-self: center;
+      max-width: 20ch;
+      font-size: clamp(21px, 6vw, 26px);
+      font-weight: 750;
+      letter-spacing: 0.01em;
+    }
+    .divider {
+      flex: none;
+      width: 36px;
+      height: 2.5px;
+      margin: 17px auto;
+      border-radius: 999px;
+      background: var(--fg);
+    }
+    .example-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+    .ex-label {
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.15em;
+    }
+    .origin {
+      padding: 2px 7px;
+      border: 1px solid var(--fg);
+      border-radius: 999px;
+      background: var(--soft);
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .example {
+      max-width: 26ch;
+      align-self: center;
+      overflow-wrap: anywhere;
+      font-size: clamp(15px, 4.4vw, 17px);
+      font-style: italic;
+      line-height: 1.48;
+    }
+    .example-zh {
+      max-width: 25ch;
+      margin-top: 9px;
+      align-self: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .usage-note {
+      width: 100%;
+      margin-top: 16px;
+      padding: 10px 12px;
+      border: 1.5px solid var(--fg);
+      border-radius: 12px;
+      background: var(--soft);
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: left;
+    }
+    .usage-note::before {
+      content: "用法  ";
+      font-family: var(--font-mono);
+      font-weight: 800;
+    }
+    .badge {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 4px 10px;
+      border: 2px solid var(--fg);
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: var(--shadow-sm);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 750;
+      pointer-events: none;
+    }
+    .badge[hidden] { display: none; }
+    .card.is-known .face.front { background: #fff8f5; }
+    .card:focus-visible { outline: none; }
+    .card:focus-visible .face { box-shadow: 0 0 0 3px var(--accent-soft), var(--card-shadow); }
+
+    .controls {
+      flex: none;
+      display: grid;
+      grid-template-columns: 46px 1fr 46px;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 22px 6px;
+    }
+    .icon-btn {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border: 1.5px solid var(--fg);
+      border-radius: 999px;
+      background: transparent;
+      transition: background 0.15s ease, opacity 0.15s ease;
+    }
+    .icon-btn svg { width: 18px; height: 18px; }
+    .icon-btn:hover:not(:disabled) { background: var(--soft); }
+    .icon-btn:disabled { cursor: default; opacity: 0.35; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn {
+      height: 48px;
+      border: 1.5px solid var(--fg);
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 700;
+      transition: background 0.15s ease, transform 0.05s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-again { background: transparent; }
+    .btn-again:hover { background: var(--soft); }
+    .btn-know { background: var(--accent); }
+    .btn-know:hover { background: #ef7287; }
+    .icon-btn:focus-visible, .btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .swipe-hint {
+      position: absolute;
+      z-index: 5;
+      bottom: 102px;
+      left: 50%;
+      padding: 8px 16px;
+      border: 2px solid var(--fg);
+      border-radius: 999px;
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      pointer-events: none;
+      transform: translateX(-50%);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      white-space: nowrap;
+    }
+    .swipe-hint.hide { opacity: 0; transform: translateX(-50%) translateY(6px); }
+    .error {
+      display: none;
+      margin: auto 22px;
+      padding: 18px;
+      border: 2px solid var(--fg);
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: var(--card-shadow);
+      font-size: 14px;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .app-bar { animation: rise-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+      .deck { animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both; }
+      .controls { animation: rise-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both; }
+      .badge:not([hidden]) { animation: badge-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    }
+    @keyframes rise-in { from { opacity: 0; transform: translateY(18px); } }
+    @keyframes badge-pop { from { opacity: 0; transform: scale(0.6); } }
+
+    @media (max-width: 359px) {
+      .phone { min-height: 520px; }
+      .controls { grid-template-columns: 40px 1fr 40px; gap: 8px; padding-inline: 14px; }
+      .icon-btn { width: 40px; height: 40px; }
+      .btn { height: 44px; font-size: 13px; }
+      .slide { padding-inline: 14px; }
+      .face { padding-inline: 20px; }
+    }
+    @media (max-height: 640px) {
+      .phone { min-height: 0; }
+      .source { margin-bottom: 7px; }
+      .slide { padding-top: 10px; }
+      .card { min-height: 260px; }
+      .face { padding-top: 22px; padding-bottom: 40px; }
+      .pos { margin-bottom: 14px; }
+      .word { font-size: clamp(31px, 10vw, 46px); }
+      .controls { padding-top: 8px; }
+      .swipe-hint { bottom: 94px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .card-inner, .progress-fill, .swipe-hint { transition: none; }
+      .slide .card { opacity: 1; filter: none; transform: none !important; }
+      .app-bar, .deck, .controls, .badge { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="phone" id="app">
+    <header class="app-bar">
+      <div class="bar-row">
+        <h1 class="deck-name" id="deckName">英语闪卡</h1>
+        <span class="counter" id="counter">0 / 0</span>
+      </div>
+      <p class="source" id="sourceLabel"></p>
+      <div class="progress" id="progress" role="progressbar" aria-label="学习进度" aria-valuemin="1" aria-valuemax="1" aria-valuenow="1">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </header>
+
+    <section class="deck" id="deck" aria-label="闪卡卡组，左右滑动切换">
+      <ul class="track" id="track"></ul>
+    </section>
+
+    <p class="error" id="errorBox" role="alert"></p>
+    <div class="swipe-hint" id="swipeHint">左右滑动切换卡片</div>
+
+    <nav class="controls" id="controls" aria-label="卡片操作">
+      <button class="icon-btn" id="prevBtn" aria-label="上一张" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="actions">
+        <button class="btn btn-again" id="againBtn">再记一遍</button>
+        <button class="btn btn-know" id="knowBtn">认识</button>
+      </div>
+      <button class="icon-btn" id="nextBtn" aria-label="下一张">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </nav>
+  </main>
+
+  <!-- Replace the complete JSON value below when creating a deck. -->
+  <script type="application/json" id="deck-data">
+  {
+    "deckId": "template-sample",
+    "title": "真实表达·示例卡组",
+    "source": "Template sample data — replace before delivery",
+    "cards": [
+      {
+        "id": "figure-out",
+        "kind": "phrase",
+        "label": "phrasal verb",
+        "term": "figure out",
+        "pronunciation": "",
+        "meaning": "弄清楚；想出办法",
+        "example": "We'll figure it out.",
+        "translation": "我们会想出办法的。",
+        "usageNote": "口语中常用来表示找到答案或解决问题。",
+        "exampleOrigin": "source"
+      },
+      {
+        "id": "reluctant",
+        "kind": "word",
+        "label": "adj.",
+        "term": "reluctant",
+        "pronunciation": "/rɪˈlʌktənt/",
+        "meaning": "不情愿的；勉强的",
+        "example": "She was reluctant to change her mind.",
+        "translation": "她不太愿意改变想法。",
+        "usageNote": "常用结构：be reluctant to do something。",
+        "exampleOrigin": "supplemented"
+      },
+      {
+        "id": "thats-not-the-point",
+        "kind": "expression",
+        "label": "spoken",
+        "term": "That's not the point.",
+        "pronunciation": "",
+        "meaning": "重点不在那儿。",
+        "example": "That's not the point. We need to decide what to do next.",
+        "translation": "重点不在那儿。我们得决定下一步怎么做。",
+        "usageNote": "用来把讨论拉回自己认为更关键的问题，语气可能比较直接。",
+        "exampleOrigin": "supplemented"
+      }
+    ]
+  }
+  </script>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var track = document.getElementById("track");
+      var deck = document.getElementById("deck");
+      var controls = document.getElementById("controls");
+      var errorBox = document.getElementById("errorBox");
+      var counter = document.getElementById("counter");
+      var fill = document.getElementById("progressFill");
+      var progress = document.getElementById("progress");
+      var prevBtn = document.getElementById("prevBtn");
+      var nextBtn = document.getElementById("nextBtn");
+      var knowBtn = document.getElementById("knowBtn");
+      var againBtn = document.getElementById("againBtn");
+      var hint = document.getElementById("swipeHint");
+      var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      var data;
+
+      function fail(message) {
+        deck.style.display = "none";
+        controls.style.display = "none";
+        hint.style.display = "none";
+        errorBox.style.display = "block";
+        errorBox.textContent = "卡组无法加载：" + message;
+      }
+
+      try {
+        data = JSON.parse(document.getElementById("deck-data").textContent);
+      } catch (error) {
+        fail("内嵌 JSON 格式不正确。");
+        return;
+      }
+
+      var required = ["id", "kind", "label", "term", "meaning", "example", "translation", "exampleOrigin"];
+      var allowedKinds = { word: true, phrase: true, expression: true };
+      var allowedOrigins = { source: true, supplemented: true };
+      var seenIds = {};
+
+      if (!data || typeof data.deckId !== "string" || !data.deckId.trim()) {
+        fail("缺少 deckId。");
+        return;
+      }
+      if (!Array.isArray(data.cards) || data.cards.length === 0) {
+        fail("卡组中没有可学习的卡片。");
+        return;
+      }
+      for (var checkIndex = 0; checkIndex < data.cards.length; checkIndex += 1) {
+        var checkCard = data.cards[checkIndex];
+        for (var fieldIndex = 0; fieldIndex < required.length; fieldIndex += 1) {
+          var field = required[fieldIndex];
+          if (typeof checkCard[field] !== "string" || !checkCard[field].trim()) {
+            fail("第 " + (checkIndex + 1) + " 张卡缺少字段：" + field + "。");
+            return;
+          }
+        }
+        if (!allowedKinds[checkCard.kind]) {
+          fail("第 " + (checkIndex + 1) + " 张卡的 kind 不正确。");
+          return;
+        }
+        if (!allowedOrigins[checkCard.exampleOrigin]) {
+          fail("第 " + (checkIndex + 1) + " 张卡的 exampleOrigin 不正确。");
+          return;
+        }
+        if (seenIds[checkCard.id]) {
+          fail("卡片 id 重复：" + checkCard.id + "。");
+          return;
+        }
+        seenIds[checkCard.id] = true;
+      }
+
+      document.title = (data.title || "英语闪卡") + " · English Flashcards";
+      document.getElementById("deckName").textContent = data.title || "英语闪卡";
+      var sourceLabel = document.getElementById("sourceLabel");
+      sourceLabel.textContent = data.source ? "来源：" + data.source : "";
+      sourceLabel.hidden = !data.source;
+
+      function element(tag, className, text) {
+        var node = document.createElement(tag);
+        if (className) node.className = className;
+        if (typeof text === "string") node.textContent = text;
+        return node;
+      }
+
+      function buildCard(item, cardIndex) {
+        var slide = element("li", "slide tone-" + ((cardIndex % 4) + 1));
+        slide.setAttribute("role", "group");
+        slide.setAttribute("aria-label", "第 " + (cardIndex + 1) + " 张，共 " + data.cards.length + " 张");
+
+        var card = element("article", "card");
+        card.tabIndex = 0;
+        card.setAttribute("role", "button");
+        card.setAttribute("aria-pressed", "false");
+        card.setAttribute("aria-label", item.term + "，轻点查看释义");
+        card.dataset.cardId = item.id;
+
+        var inner = element("div", "card-inner");
+        var front = element("div", "face front");
+        front.appendChild(element("span", "pos", item.label));
+        var termClass = "word";
+        if (item.term.length > 28) termClass += " very-long";
+        else if (item.term.length > 16) termClass += " long";
+        var term = element("h2", termClass, item.term);
+        term.lang = "en";
+        front.appendChild(term);
+        if (item.pronunciation) {
+          var phon = element("p", "phon", item.pronunciation);
+          phon.lang = "en";
+          front.appendChild(phon);
+        }
+        front.appendChild(element("span", "face-hint", "轻点卡片 · 查看释义"));
+
+        var back = element("div", "face back");
+        back.appendChild(element("p", "def", item.meaning));
+        back.appendChild(element("span", "divider"));
+        var meta = element("div", "example-meta");
+        meta.appendChild(element("span", "ex-label", "例句"));
+        meta.appendChild(element("span", "origin", item.exampleOrigin === "source" ? "素材原句" : "补充例句"));
+        back.appendChild(meta);
+        var example = element("p", "example", item.example);
+        example.lang = "en";
+        back.appendChild(example);
+        back.appendChild(element("p", "example-zh", item.translation));
+        if (item.usageNote) back.appendChild(element("p", "usage-note", item.usageNote));
+        back.appendChild(element("span", "face-hint", "轻点返回"));
+
+        inner.appendChild(front);
+        inner.appendChild(back);
+        card.appendChild(inner);
+        var badge = element("span", "badge", "✓ 已认识");
+        badge.hidden = true;
+        card.appendChild(badge);
+        slide.appendChild(card);
+        return slide;
+      }
+
+      for (var buildIndex = 0; buildIndex < data.cards.length; buildIndex += 1) {
+        track.appendChild(buildCard(data.cards[buildIndex], buildIndex));
+      }
+
+      var slides = Array.prototype.slice.call(track.children);
+      var total = slides.length;
+      var storeKey = "english-flashcards:" + data.deckId + ":v1";
+      var index = 0;
+      var known = {};
+      var hintShown = total > 1;
+      var scrollTarget = null;
+
+      if (!hintShown) hint.style.display = "none";
+      try {
+        var saved = JSON.parse(localStorage.getItem(storeKey) || "{}");
+        if (saved && typeof saved.index === "number") index = Math.min(Math.max(saved.index, 0), total - 1);
+        if (saved && saved.known && typeof saved.known === "object") known = saved.known;
+      } catch (error) {
+        known = {};
+      }
+
+      function save() {
+        try {
+          localStorage.setItem(storeKey, JSON.stringify({ index: index, known: known }));
+        } catch (error) {
+          /* Continue without persistence when storage is unavailable. */
+        }
+      }
+
+      function slideWidth() { return track.clientWidth; }
+
+      function applyParallax() {
+        if (reduceMotion.matches) return;
+        var width = slideWidth();
+        if (!width) return;
+        var center = track.scrollLeft + width / 2;
+        slides.forEach(function (slide) {
+          var distance = (slide.offsetLeft + slide.offsetWidth / 2 - center) / width;
+          distance = Math.max(-1.15, Math.min(1.15, distance));
+          slide.style.setProperty("--d", distance.toFixed(4));
+          slide.style.setProperty("--abs", Math.min(Math.abs(distance), 1).toFixed(4));
+        });
+      }
+
+      function render() {
+        counter.textContent = (index + 1) + " / " + total;
+        fill.style.width = (((index + 1) / total) * 100).toFixed(2) + "%";
+        progress.setAttribute("aria-valuemax", String(total));
+        progress.setAttribute("aria-valuenow", String(index + 1));
+        prevBtn.disabled = index === 0;
+        nextBtn.disabled = index === total - 1;
+      }
+
+      function goTo(targetIndex, smooth) {
+        index = Math.min(Math.max(targetIndex, 0), total - 1);
+        scrollTarget = smooth ? index : null;
+        track.scrollTo({ left: index * slideWidth(), behavior: smooth ? "smooth" : "auto" });
+        render();
+        save();
+      }
+
+      function dismissHint() {
+        if (!hintShown) return;
+        hintShown = false;
+        hint.classList.add("hide");
+      }
+
+      slides.forEach(function (slide, cardIndex) {
+        var card = slide.querySelector(".card");
+        if (known[data.cards[cardIndex].id]) {
+          card.classList.add("is-known");
+          card.querySelector(".badge").hidden = false;
+        }
+      });
+
+      var scrollRaf = null;
+      track.addEventListener("scroll", function () {
+        if (scrollRaf) return;
+        scrollRaf = requestAnimationFrame(function () {
+          scrollRaf = null;
+          applyParallax();
+          dismissHint();
+          var nextIndex = Math.round(track.scrollLeft / slideWidth());
+          if (scrollTarget !== null) {
+            if (Math.abs(track.scrollLeft - scrollTarget * slideWidth()) < 2) {
+              index = scrollTarget;
+              scrollTarget = null;
+              render();
+              save();
+            }
+            return;
+          }
+          if (nextIndex !== index && nextIndex >= 0 && nextIndex < total) {
+            index = nextIndex;
+            render();
+            save();
+          }
+        });
+      }, { passive: true });
+
+      track.addEventListener("pointerdown", function () {
+        scrollTarget = null;
+      }, { passive: true });
+
+      function toggleFlip(card) {
+        var flipped = card.classList.toggle("flipped");
+        card.setAttribute("aria-pressed", String(flipped));
+      }
+
+      track.addEventListener("click", function (event) {
+        var card = event.target.closest(".card");
+        if (card) toggleFlip(card);
+      });
+
+      track.addEventListener("keydown", function (event) {
+        var card = event.target.closest(".card");
+        if (!card) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          toggleFlip(card);
+        }
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          goTo(index - 1, true);
+        }
+        if (event.key === "ArrowRight") {
+          event.preventDefault();
+          goTo(index + 1, true);
+        }
+      });
+
+      function mark(isKnown) {
+        var itemId = data.cards[index].id;
+        if (isKnown) known[itemId] = true;
+        else delete known[itemId];
+        var card = slides[index].querySelector(".card");
+        card.classList.toggle("is-known", isKnown);
+        card.querySelector(".badge").hidden = !isKnown;
+        save();
+        if (index < total - 1) goTo(index + 1, true);
+      }
+
+      knowBtn.addEventListener("click", function () { mark(true); });
+      againBtn.addEventListener("click", function () { mark(false); });
+      prevBtn.addEventListener("click", function () { goTo(index - 1, true); });
+      nextBtn.addEventListener("click", function () { goTo(index + 1, true); });
+
+      window.addEventListener("resize", function () {
+        scrollTarget = null;
+        track.scrollTo({ left: index * slideWidth(), behavior: "auto" });
+        applyParallax();
+      });
+
+      if (typeof reduceMotion.addEventListener === "function") {
+        reduceMotion.addEventListener("change", function () {
+          if (reduceMotion.matches) {
+            slides.forEach(function (slide) {
+              slide.style.removeProperty("--d");
+              slide.style.removeProperty("--abs");
+            });
+          } else {
+            applyParallax();
+          }
+        });
+      }
+
+      if (hintShown) window.setTimeout(dismissHint, 5000);
+      requestAnimationFrame(function () {
+        goTo(index, false);
+        applyParallax();
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+interface:
+  display_name: "英文素材闪卡"
+  short_description: "把英文文章、字幕截图和教材内容整理成交互式单文件学习闪卡"
+  brand_color: "#E85D75"
+  default_prompt: "Use $english-source-to-flashcards to turn this English material into a self-contained flashcard HTML."
+policy:
+  allow_implicit_invocation: true
