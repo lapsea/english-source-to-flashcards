@@ -22,16 +22,22 @@ Avoid proper names, transparent names of objects, accidental OCR fragments, dupl
 
 For dialogue and TV subtitles, prefer chunks a learner could actually say. For formal articles, prefer transferable academic or workplace collocations rather than isolated rare words.
 
+## One-line title gate
+
+Before a candidate becomes a card, render it in the supplied template at a 360px-wide viewport. The front-side `term` must remain on one fully visible line at the template's assigned title size; it may not wrap, clip, ellipsize, or be reduced below the template's `very-long` size. Reject it when it fails. Do not replace it with an acronym, a partial phrase, or altered wording just to pass the gate; choose another item instead.
+
+Apply this gate equally to source items and optional supplemental items. Supplemental items should be rare, broadly useful, and never represented as source wording. Keep provenance in `exampleOrigin` for validation only; never render it as a card label such as “素材原句” or “补充例句”.
+
 ## Write each card
 
-- `term`: use the smallest independently useful learning unit. Keep a necessary preposition or particle, such as `run into` or `be on the same page`.
+- `term`: use the smallest independently useful learning unit. Keep a necessary preposition or particle, such as `run into` or `be on the same page`, but only if it passes the one-line title gate.
 - `label`: use a short learner-facing label such as `v.`, `n.`, `phr.`, `collocation`, or `spoken`.
 - `meaning`: explain the meaning used in context first. Keep Chinese concise and natural; do not dump every dictionary sense.
-- `pronunciation`: provide IPA only when confident and useful. It is normally empty for phrases and expressions.
-- `example`: prefer a concise, natural sentence that makes the usage obvious. It may come from the source or be newly written.
-- `exampleOrigin`: use `source` only for a sentence actually found in the supplied material. Use `supplemented` for rewritten, completed, or newly created examples.
+- `pronunciation`: provide IPA only when confident and useful.
+- `example`: prefer a concise source sentence containing the selected word. A newly written example is permitted only when necessary, and must remain short.
+- `exampleOrigin`: use `source` only for a sentence actually found in the supplied material. Use `supplemented` for rewritten, completed, or newly created examples. Keep this field out of the visible card interface.
 - `translation`: translate the example naturally rather than mirroring English word order.
-- `usageNote`: add only when it clarifies register, tone, grammar, collocation, or a likely misuse. Leave it empty when it would merely repeat the definition.
+- `usageNote`: add only when it clarifies register, tone, or a likely misuse. Leave it empty when it would merely repeat the definition.
 
 Keep examples short enough for a phone card. If a source sentence is too long, use a shorter generated example and mark it `supplemented`; do not silently edit it while labeling it as a source quotation.
 
