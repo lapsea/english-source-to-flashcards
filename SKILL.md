@@ -1,9 +1,9 @@
 ---
-name: english-source-to-flashcards
+name: quick-word-notes
 description: Turn user-provided English articles, passages, textbook pages, or subtitle screenshots into a curated set of vocabulary, phrases, and authentic expressions, then deliver them as a self-contained interactive HTML flashcard deck. Use when the user wants to learn English from supplied text or images; do not use for generic translation-only requests.
 ---
 
-# English Source to Flashcards
+# 随手记词
 
 Create one useful learning deck from the user's English material. Words, phrases, collocations, expressions, and a small number of useful supplemental items are allowed. Every card title must render on one line in the supplied template at a 360px-wide mobile viewport: do not wrap, truncate, or shrink it below the template's minimum title size. Reject a candidate that fails this visual gate, even if it is otherwise valuable.
 
